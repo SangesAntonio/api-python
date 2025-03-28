@@ -5,4 +5,4 @@ pandas
 flask
 flask-cors
 gunicorn
-prophet
+prophet==1.1.5
