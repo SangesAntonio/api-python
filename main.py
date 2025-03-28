@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from prophet import Prophet
 import pandas as pd
 
-@app.route("/api/previsione", methods=["POST"])
+@app.route("/", methods=["POST"])
 def previsione():
     try:
         dati = request.get_json()
