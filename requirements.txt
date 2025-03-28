@@ -4,5 +4,5 @@ pystan==2.19.1.1
 pandas
 flask
 flask-cors
-prophet
 gunicorn
+prophet==1.1.5
