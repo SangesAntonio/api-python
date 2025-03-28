@@ -1,39 +1,28 @@
 from flask import Flask, request, jsonify
-from prophet import Prophet
+from flask_cors import CORS
 import pandas as pd
-from datetime import timedelta
+from prophet import Prophet
 
 app = Flask(__name__)
+CORS(app)
 
-
-@app.route("/", methods=["GET"])
+@app.route('/')
 def home():
-    return "L'API è attiva, Antonio! 🚀"
+    return "API di previsione con Prophet è attiva!"
 
-
-@app.route("/", methods=["POST"])
+@app.route('/', methods=['POST'])
 def previsione():
     try:
-        data = request.get_json()
-        # Aspettati un array di oggetti con 'ds' e 'y'
-        df = pd.DataFrame(data)
-
-        # Crea e addestra il modello
-        model = Prophet()
-        model.fit(df)
-
-        # Crea il dataframe futuro (30 giorni avanti)
-        future = model.make_future_dataframe(periods=30)
-        forecast = model.predict(future)
-
-        # Ritorna solo le colonne principali
-        risultato = forecast[['ds', 'yhat', 'yhat_lower',
-                              'yhat_upper']].tail(30).to_dict(orient='records')
-        return jsonify({"success": True, "previsioni": risultato})
-
+        dati = request.get_json()
+        df = pd.DataFrame(dati)
+        modello = Prophet()
+        modello.fit(df)
+        futuro = modello.make_future_dataframe(periods=30)
+        previsione = modello.predict(futuro)
+        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(30).to_dict(orient='records')
+        return jsonify(risultato)
     except Exception as e:
-        return jsonify({"success": False, "errore": str(e)}), 400
+        return jsonify({'errore': str(e)})
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
