@@ -1,8 +1,6 @@
-numpy
-Cython
-pystan==2.19.1.1
 pandas
 flask
 flask-cors
 gunicorn
-prophet
+prophet==1.2.0
+cmdstanpy==1.1.0
