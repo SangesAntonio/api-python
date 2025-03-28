@@ -13,24 +13,35 @@ def home():
 @app.route('/', methods=['POST'])
 def previsione():
     try:
-        dati = request.get_json()
+        payload = request.get_json()
+
+        dati = payload.get("dati")
+        frequenza = payload.get("frequenza", "W")
+        periodi = int(payload.get("periodi", 52))
+        params = payload.get("params", {})
 
         df = pd.DataFrame(dati)
         df['ds'] = pd.to_datetime(df['ds'])
         df['y'] = pd.to_numeric(df['y'])
 
-        # Raggruppa per settimana e calcola media
-        df_settimanale = df.set_index('ds').resample('W').mean().reset_index()
+        if frequenza != "D":
+            df = df.set_index('ds').resample(frequenza).mean().reset_index()
 
-        # Crea e addestra il modello
-        modello = Prophet()
-        modello.fit(df_settimanale)
+        # Imposta parametri Prophet
+        model_args = {
+            "growth": params.get("growth", "linear"),
+            "yearly_seasonality": params.get("yearly_seasonality", False),
+            "weekly_seasonality": params.get("weekly_seasonality", True),
+            "changepoint_prior_scale": params.get("changepoint_prior_scale", 0.1)
+        }
 
-        # Previsioni per 52 settimane
-        futuro = modello.make_future_dataframe(periods=52, freq='W')
+        modello = Prophet(**model_args)
+        modello.fit(df)
+
+        futuro = modello.make_future_dataframe(periods=periodi, freq=frequenza)
         previsione = modello.predict(futuro)
 
-        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(52).to_dict(orient='records')
+        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periodi).to_dict(orient='records')
         return jsonify({ "success": True, "previsioni": risultato })
 
     except Exception as e:
