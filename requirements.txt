@@ -1,8 +1,9 @@
-numpy
-Cython
+
+numpy==1.26.4
+Cython==3.0.8
 pystan==2.19.1.1
-pandas
-flask
-flask-cors
-gunicorn
+pandas==2.2.1
+flask==3.0.2
+flask-cors==4.0.0
+gunicorn==21.2.0
 prophet==1.1.5
