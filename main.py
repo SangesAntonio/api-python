@@ -12,31 +12,31 @@ return "API di previsione con Prophet è attiva!"
 
 @app.route('/', methods=['POST'])
 def previsione():
-try:
-     dati = request.get_json()
-    df = pd.DataFrame(dati)
+    try:
+        payload = request.get_json()
 
-    #  Assicura che 'ds' sia datetime
-    df['ds'] = pd.to_datetime(df['ds'])
+        dati = payload.get("dati")
+        frequenza = payload.get("frequenza", "D")
+        periods = int(payload.get("periodi", 30))
 
-    #  Raggruppa per settimana e calcola media
-    df_settimanale = df.set_index('ds').resample('W').mean().reset_index()
+        df = pd.DataFrame(dati)
+        df['ds'] = pd.to_datetime(df['ds'])
+        df['y'] = pd.to_numeric(df['y'])
 
-    #  Crea e addestra il modello
-    modello = Prophet()
-    modello.fit(df_settimanale)
+        if frequenza != "D":
+            df = df.set_index('ds').resample(frequenza).mean().reset_index()
 
-    #  52 settimane = 1 anno, frequenza settimanale
-    futuro = modello.make_future_dataframe(periods=52, freq='W')
-    previsione = modello.predict(futuro)
+        modello = Prophet()
+        modello.fit(df)
 
-    #  Ritorna tutte le 52 settimane (o meno se vuoi)
-    risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(52).to_dict(orient='records')
+        futuro = modello.make_future_dataframe(periods=periods, freq=frequenza)
+        previsione = modello.predict(futuro)
 
-    return jsonify({ "success": True, "previsioni": risultato })e[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(30).to_dict(orient='records')
-    return jsonify(risultato)
-except Exception as e:
-    return jsonify({'errore': str(e)})
+        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods).to_dict(orient='records')
+        return jsonify({ "success": True, "previsioni": risultato })
+
+    except Exception as e:
+        return jsonify({ "success": False, "errore": str(e) }), 400
 
 if __name__ == '__main__':
 app.run(host='0.0.0.0', port=5000)
