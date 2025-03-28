@@ -1,6 +1,8 @@
+numpy
+Cython
+pystan==2.19.1.1
+pandas
 flask
 flask-cors
-pandas
 prophet
-pystan==2.19.1.1
 gunicorn
