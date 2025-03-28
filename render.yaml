@@ -1,9 +1,9 @@
 services:
-- type: web
-  name: api-previsione
-  env: python
-  buildCommand: |
-    pip install --upgrade pip
-    pip install numpy Cython
-    pip install -r requirements.txt
-  startCommand: gunicorn main:app
+  - type: web
+    name: api-previsione
+    env: python
+    buildCommand: |
+      pip install --upgrade pip
+      pip install numpy Cython
+      pip install -r requirements.txt
+    startCommand: gunicorn main:app
