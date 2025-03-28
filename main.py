@@ -8,35 +8,35 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return "API di previsione con Prophet è attiva!"
+return "API di previsione con Prophet è attiva!"
 
 @app.route('/', methods=['POST'])
 def previsione():
-    try:
-         dati = request.get_json()
-        df = pd.DataFrame(dati)
+try:
+     dati = request.get_json()
+    df = pd.DataFrame(dati)
 
-        # ✅ Assicura che 'ds' sia datetime
-        df['ds'] = pd.to_datetime(df['ds'])
+    #  Assicura che 'ds' sia datetime
+    df['ds'] = pd.to_datetime(df['ds'])
 
-        # ✅ Raggruppa per settimana e calcola media
-        df_settimanale = df.set_index('ds').resample('W').mean().reset_index()
+    #  Raggruppa per settimana e calcola media
+    df_settimanale = df.set_index('ds').resample('W').mean().reset_index()
 
-        # ✅ Crea e addestra il modello
-        modello = Prophet()
-        modello.fit(df_settimanale)
+    #  Crea e addestra il modello
+    modello = Prophet()
+    modello.fit(df_settimanale)
 
-        # ✅ 52 settimane = 1 anno, frequenza settimanale
-        futuro = modello.make_future_dataframe(periods=52, freq='W')
-        previsione = modello.predict(futuro)
+    #  52 settimane = 1 anno, frequenza settimanale
+    futuro = modello.make_future_dataframe(periods=52, freq='W')
+    previsione = modello.predict(futuro)
 
-        # ✅ Ritorna tutte le 52 settimane (o meno se vuoi)
-        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(52).to_dict(orient='records')
+    #  Ritorna tutte le 52 settimane (o meno se vuoi)
+    risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(52).to_dict(orient='records')
 
-        return jsonify({ "success": True, "previsioni": risultato })e[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(30).to_dict(orient='records')
-        return jsonify(risultato)
-    except Exception as e:
-        return jsonify({'errore': str(e)})
+    return jsonify({ "success": True, "previsioni": risultato })e[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(30).to_dict(orient='records')
+    return jsonify(risultato)
+except Exception as e:
+    return jsonify({'errore': str(e)})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+app.run(host='0.0.0.0', port=5000)
