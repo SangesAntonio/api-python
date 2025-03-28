@@ -2,5 +2,5 @@ pandas
 flask
 flask-cors
 gunicorn
-prophet==1.2.0
+prophet==1.1.5
 cmdstanpy==1.1.0
