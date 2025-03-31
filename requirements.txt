@@ -5,3 +5,4 @@ flask-cors
 gunicorn
 cmdstanpy==1.1.0
 prophet==1.1.5
+lifelines
