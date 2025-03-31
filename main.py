@@ -13,7 +13,7 @@ def home():
 @app.route('/', methods=['POST'])
 def previsione():
     try:
-               payload = request.get_json()
+        payload = request.get_json()
 
         dati = payload.get("dati")
         frequenza = payload.get("frequenza", "W")
