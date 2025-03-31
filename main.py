@@ -28,10 +28,9 @@ def previsione():
             df = df.set_index('ds').resample(frequenza).mean().reset_index()
 
         # Imposta parametri Prophet
-        # Imposta parametri Prophet
         model_args = {
             "growth": params.get("growth", "linear"),
-            "yearly_seasonality": params.get("yearly_seasonality", False),
+            "yearly_seasonality": params.get("yearly_seasonality", True),
             "weekly_seasonality": params.get("weekly_seasonality", True),
             "changepoint_prior_scale": params.get("changepoint_prior_scale", 0.1)
         }
@@ -42,7 +41,7 @@ def previsione():
         futuro = modello.make_future_dataframe(periods=periodi, freq=frequenza)
         previsione = modello.predict(futuro)
 
-        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periodi).to_dict(orient='records')
+        risultato = previsione[['ds', 'yhat', 'yhat_lower', 'yhat_upper','weekly','yearly']].tail(periodi).to_dict(orient='records')
         return jsonify({ "success": True, "previsioni": risultato })
 
     except Exception as e:
