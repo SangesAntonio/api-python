@@ -58,6 +58,7 @@ def previsione():
 
         risultato = previsione[colonne].tail(periodi).to_dict(orient='records')
         return jsonify({ "success": True, "previsioni": risultato })
+       
 
     except Exception as e:
         return jsonify({'errore': str(e)}), 400
