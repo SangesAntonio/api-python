@@ -3,9 +3,13 @@ from flask_cors import CORS
 from prophet import Prophet
 from lifelines import KaplanMeierFitter, CoxPHFitter
 import pandas as pd
+import json
 
 app = Flask(__name__)
 CORS(app)
+
+cox_model = None
+cox_columns = []
 
 @app.route('/')
 def home():
@@ -93,6 +97,7 @@ def sopravvivenza():
 
 @app.route('/cox', methods=['POST'])
 def analisi_cox():
+    global cox_model, cox_columns
     try:
         dati = request.get_json()
         df = pd.DataFrame(dati)
@@ -101,16 +106,16 @@ def analisi_cox():
         df["data_fine"] = pd.to_datetime(df["data_fine"])
         df["durata"] = (df["data_fine"] - df["data_inizio"]).dt.days
 
-        # Elimina colonne inutili e converte categoriche in dummy variables
         df_model = df.drop(columns=["data_inizio", "data_fine"])
         categoriche = df_model.select_dtypes(include=['object', 'category']).columns.tolist()
         df_model = pd.get_dummies(df_model, columns=categoriche, drop_first=True)
-
-        # Rimuove colonne costanti (che causano errori di collinearità)
         df_model = df_model.loc[:, df_model.apply(pd.Series.nunique) > 1]
 
         cph = CoxPHFitter()
         cph.fit(df_model, duration_col="durata", event_col="evento")
+
+        cox_model = cph
+        cox_columns = df_model.columns.tolist()
 
         summary = cph.summary.reset_index()
         features = []
@@ -126,7 +131,6 @@ def analisi_cox():
                 )
             })
 
-        # Prompt potenziato
         prompt = (
             "I dati seguenti derivano da un'analisi di sopravvivenza con il modello di Cox applicata a pazienti veterinari (cani e gatti) con differenti diagnosi e trattamenti. "
             "Ogni voce include il valore di hazard ratio (HR), il p-value e un'indicazione interpretativa.\n\n"
@@ -147,6 +151,35 @@ def analisi_cox():
 
     except Exception as e:
         return jsonify({"status": "errore", "messaggio": str(e)}), 400
+
+@app.route('/valuta_paziente', methods=['POST'])
+def valuta_paziente():
+    global cox_model, cox_columns
+    try:
+        if cox_model is None:
+            return jsonify({"errore": "Modello di Cox non ancora addestrato."}), 400
+
+        nuovo_paziente = pd.DataFrame([request.get_json()])
+        nuovo_paziente = pd.get_dummies(nuovo_paziente)
+
+        for col in cox_columns:
+            if col not in nuovo_paziente.columns:
+                nuovo_paziente[col] = 0
+
+        nuovo_paziente = nuovo_paziente[cox_columns]
+        rischio = cox_model.predict_partial_hazard(nuovo_paziente).values[0]
+
+        prompt = (
+            f"Questo è un nuovo paziente veterinario. I suoi dati sono:\n"
+            f"{json.dumps(request.get_json(), indent=2)}\n\n"
+            f"Secondo il modello di Cox già addestrato, il rischio relativo stimato per questo paziente è {round(rischio, 3)}.\n"
+            "Considerando i fattori di rischio e protezione emersi dall'analisi, quali indicazioni cliniche si possono fornire?"
+        )
+
+        return jsonify({"rischio_relativo": round(rischio, 3), "prompt": prompt})
+
+    except Exception as e:
+        return jsonify({"errore": str(e)}), 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
