@@ -1,18 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from prophet import Prophet
-from lifelines import KaplanMeierFitter
+from lifelines import KaplanMeierFitter, CoxPHFitter
 import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
 
-# Route di controllo
 @app.route('/')
 def home():
     return "API di previsione con Prophet è attiva!"
 
-# API Prophet
 @app.route('/', methods=['POST'])
 def previsione():
     try:
@@ -62,7 +60,6 @@ def previsione():
     except Exception as e:
         return jsonify({'errore': str(e)}), 400
 
-# ✅ API Sopravvivenza
 @app.route('/sopravvivenza', methods=['POST'])
 def sopravvivenza():
     try:
@@ -90,10 +87,50 @@ def sopravvivenza():
                     })
 
         return jsonify({"status": "ok", "risultati": output})
-    
+
     except Exception as e:
         return jsonify({"status": "errore", "messaggio": str(e)}), 400
 
-# Avvio server (usato solo in locale o su Render se serve)
+@app.route('/cox', methods=['POST'])
+def analisi_cox():
+    try:
+        dati = request.get_json()
+        df = pd.DataFrame(dati)
+
+        df["data_inizio"] = pd.to_datetime(df["data_inizio"])
+        df["data_fine"] = pd.to_datetime(df["data_fine"])
+        df["durata"] = (df["data_fine"] - df["data_inizio"]).dt.days
+
+        # Elimina colonne inutili e converte categoriche in dummy variables
+        df_model = df.drop(columns=["data_inizio", "data_fine"])
+        categoriche = df_model.select_dtypes(include=['object', 'category']).columns.tolist()
+        df_model = pd.get_dummies(df_model, columns=categoriche, drop_first=True)
+
+        cph = CoxPHFitter()
+        cph.fit(df_model, duration_col="durata", event_col="evento")
+
+        summary = cph.summary.reset_index()
+        output = {
+            "model": "Cox Proportional Hazards",
+            "features": []
+        }
+
+        for _, row in summary.iterrows():
+            output["features"].append({
+                "name": row["index"],
+                "hazard_ratio": round(row["exp(coef)"], 3),
+                "p_value": round(row["p"], 4),
+                "interpretation": (
+                    "aumenta il rischio" if row["exp(coef)"] > 1 else
+                    "riduce il rischio" if row["exp(coef)"] < 1 else
+                    "nessun effetto"
+                )
+            })
+
+        return jsonify(output)
+
+    except Exception as e:
+        return jsonify({"status": "errore", "messaggio": str(e)}), 400
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
