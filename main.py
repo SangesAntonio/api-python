@@ -113,13 +113,9 @@ def analisi_cox():
         cph.fit(df_model, duration_col="durata", event_col="evento")
 
         summary = cph.summary.reset_index()
-        output = {
-            "model": "Cox Proportional Hazards",
-            "features": []
-        }
-
+        features = []
         for _, row in summary.iterrows():
-            output["features"].append({
+            features.append({
                 "name": row[summary.columns[0]],
                 "hazard_ratio": round(row["exp(coef)"], 3),
                 "p_value": round(row["p"], 4),
@@ -129,6 +125,17 @@ def analisi_cox():
                     "nessun effetto"
                 )
             })
+
+        # Costruisce il prompt per GPT
+        prompt = "Analizza i seguenti risultati dell'analisi di sopravvivenza con il modello di Cox. Spiega quali fattori riducono o aumentano il rischio, e quali terapie sembrano più efficaci anche se i valori non sono statisticamente significativi:\n\n"
+        for f in features:
+            prompt += f"- {f['name']}: HR={f['hazard_ratio']}, p={f['p_value']} → {f['interpretation']}\n"
+
+        output = {
+            "model": "Cox Proportional Hazards",
+            "features": features,
+            "prompt": prompt
+        }
 
         return jsonify(output)
 
