@@ -126,8 +126,14 @@ def analisi_cox():
                 )
             })
 
-        # Costruisce il prompt per GPT
-        prompt = "Analizza i seguenti risultati dell'analisi di sopravvivenza con il modello di Cox. Spiega quali fattori riducono o aumentano il rischio, e quali terapie sembrano più efficaci anche se i valori non sono statisticamente significativi:\n\n"
+        # Prompt potenziato
+        prompt = (
+            "I dati seguenti derivano da un'analisi di sopravvivenza con il modello di Cox applicata a pazienti veterinari (cani e gatti) con differenti diagnosi e trattamenti. "
+            "Ogni voce include il valore di hazard ratio (HR), il p-value e un'indicazione interpretativa.\n\n"
+            "Lo scopo è determinare quali fattori aumentano o riducono il rischio di mortalità, "
+            "e quali terapie potrebbero risultare più efficaci, anche in assenza di significatività statistica.\n\n"
+            "Analizza i risultati e fornisci una valutazione complessiva, evidenziando possibili raccomandazioni cliniche e fattori di rischio:\n\n"
+        )
         for f in features:
             prompt += f"- {f['name']}: HR={f['hazard_ratio']}, p={f['p_value']} → {f['interpretation']}\n"
 
