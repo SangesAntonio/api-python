@@ -106,10 +106,13 @@ def analisi_cox():
         categoriche = df_model.select_dtypes(include=['object', 'category']).columns.tolist()
         df_model = pd.get_dummies(df_model, columns=categoriche, drop_first=True)
 
+        # Rimuove colonne costanti (che causano errori di collinearità)
+        df_model = df_model.loc[:, df_model.apply(pd.Series.nunique) > 1]
+
         cph = CoxPHFitter()
         cph.fit(df_model, duration_col="durata", event_col="evento")
 
-        summary = cph.summary.reset_index()
+        summary = cph.summary.reset_index(names=True)
         output = {
             "model": "Cox Proportional Hazards",
             "features": []
