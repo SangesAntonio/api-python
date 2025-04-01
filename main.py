@@ -112,7 +112,7 @@ def analisi_cox():
         cph = CoxPHFitter()
         cph.fit(df_model, duration_col="durata", event_col="evento")
 
-        summary = cph.summary.reset_index(names=True)
+        summary = cph.summary.reset_index()
         output = {
             "model": "Cox Proportional Hazards",
             "features": []
@@ -120,7 +120,7 @@ def analisi_cox():
 
         for _, row in summary.iterrows():
             output["features"].append({
-                "name": row["index"],
+                "name": row[summary.columns[0]],
                 "hazard_ratio": round(row["exp(coef)"], 3),
                 "p_value": round(row["p"], 4),
                 "interpretation": (
