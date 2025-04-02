@@ -102,11 +102,13 @@ def analisi_cox():
         dati = request.get_json()
         df = pd.DataFrame(dati)
 
-        df["data_inizio"] = pd.to_datetime(df["data_inizio"])
-        df["data_fine"] = pd.to_datetime(df["data_fine"])
-        df["durata"] = (df["data_fine"] - df["data_inizio"]).dt.days
+        # NON serve convertire date e calcolare durata
+        # df["data_inizio"] = pd.to_datetime(df["data_inizio"])
+        # df["data_fine"] = pd.to_datetime(df["data_fine"])
+        # df["durata"] = (df["data_fine"] - df["data_inizio"]).dt.days
 
-        df_model = df.drop(columns=["data_inizio", "data_fine"])
+        # df["evento"] è già presente
+        df_model = df.drop(columns=["inizio", "fine"])
         categoriche = df_model.select_dtypes(include=['object', 'category']).columns.tolist()
         df_model = pd.get_dummies(df_model, columns=categoriche, drop_first=True)
         df_model = df_model.loc[:, df_model.apply(pd.Series.nunique) > 1]
